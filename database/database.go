@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"log"
+	"time"
 )
 
 // DbConn is our database connection pool
@@ -16,4 +17,9 @@ func Connect() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// configure the connection pool
+	DbConn.SetConnMaxLifetime(60 * time.Second)
+	DbConn.SetMaxOpenConns(4)
+	DbConn.SetMaxIdleConns(4)
 }
