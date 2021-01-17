@@ -3,8 +3,13 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
+	"alexandrugris.ro/webservicelearning/database"
 	"alexandrugris.ro/webservicelearning/product"
+
+	// import the postgres database driver
+	_ "github.com/lib/pq"
 )
 
 func corsMiddleware(handler http.Handler) http.Handler {
@@ -34,7 +39,18 @@ func main() {
 
 	log.Println("Service started")
 
-	// handler for GET all and POST
+	database.Connect()
+
+	for _, v := range os.Args[1:] {
+		switch v {
+		case "--dbinit":
+			log.Println("Initializing database")
+			if err := product.InitStorage(); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
 	for k, v := range product.GetHTTPHandlers() {
 		http.Handle(k, corsMiddleware(v))
 	}
@@ -42,4 +58,5 @@ func main() {
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)
 	}
+
 }
