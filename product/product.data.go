@@ -1,6 +1,7 @@
 package product
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"math/rand"
 	"reflect"
 	"sync"
+	"time"
 
 	"alexandrugris.ro/webservicelearning/database"
 )
@@ -29,7 +31,11 @@ var productMap *mapInternal
 
 func (m *mapInternal) GetAll() []*Product {
 
-	results, err := database.DbConn.Query(`
+	// this will allow the queries to timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	results, err := database.DbConn.QueryContext(ctx, `
 	SELECT 
 		ProductID, 
 		Manufacturer, 
@@ -66,7 +72,10 @@ func (m *mapInternal) GetAll() []*Product {
 
 func (m *mapInternal) FindByID(id int) *Product {
 
-	row := database.DbConn.QueryRow(`
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	row := database.DbConn.QueryRowContext(ctx, `
 	SELECT 
 		ProductID, 
 		Manufacturer, 
@@ -97,14 +106,22 @@ func (m *mapInternal) FindByID(id int) *Product {
 }
 
 func (m *mapInternal) DeleteByID(id int) {
-	if _, err := database.DbConn.Exec("DELETE FROM Products WHERE ProductID=$1", id); err != nil {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	if _, err := database.DbConn.ExecContext(ctx, "DELETE FROM Products WHERE ProductID=$1", id); err != nil {
 		log.Println(err)
 	}
 }
 
 func (m *mapInternal) UpdateByID(id int, p *Product) bool {
 
-	res, err := database.DbConn.Exec(`
+	// allow the database to timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	res, err := database.DbConn.ExecContext(ctx, `
 	UPDATE Products SET 
 		Manufacturer=$1
 		PricePerUnit=$2
@@ -135,13 +152,20 @@ func (m *mapInternal) UpdateByID(id int, p *Product) bool {
 
 func (m *mapInternal) CreateNew(p *Product) {
 
-	stmt, err := database.DbConn.Prepare(`INSERT INTO Products(Manufacturer, PricePerUnit, UnitsAvailable, ProductName, ProductID) VALUES ($1, $2, $3, $4, nextval('pk_product')) RETURNING ProductID`)
+	// allow the database to timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	stmt, err := database.DbConn.PrepareContext(ctx,
+		`INSERT INTO Products(Manufacturer, PricePerUnit, UnitsAvailable, ProductName, ProductID) 
+		VALUES ($1, $2, $3, $4, nextval('pk_product')) RETURNING ProductID`)
 
 	if stmt == nil || err != nil {
 		log.Fatal(err)
 	}
 
-	sqlRow := stmt.QueryRow(p.Manufacturer, p.PricePerUnit, p.UnitsAvailable, p.ProductName)
+	sqlRow := stmt.QueryRowContext(ctx,
+		p.Manufacturer, p.PricePerUnit, p.UnitsAvailable, p.ProductName)
 
 	if err := sqlRow.Scan(&p.ProductID); err != nil {
 		log.Fatal(err)
