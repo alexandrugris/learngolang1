@@ -3,6 +3,7 @@ package product
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -114,6 +115,7 @@ func productsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		GetProductMap().CreateNew(&prod)
+		w.Header().Set("Location", fmt.Sprintf("/products/%v", prod.ProductID))
 		w.WriteHeader(http.StatusCreated)
 
 	default:

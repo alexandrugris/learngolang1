@@ -127,7 +127,6 @@ func (m *mapInternal) UpdateByID(id int, p *Product) bool {
 		PricePerUnit=$2
 		UnitsAvailable=$3 
 		ProductName=$4
-	
 	WHERE ProductID=$5
 	`, p.Manufacturer,
 		p.PricePerUnit,
