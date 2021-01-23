@@ -239,6 +239,44 @@ func InitStorage() error {
 
 	}
 
+	// create the database trigger to send the notifications when products are updated
+
+	if _, err := database.DbConn.Exec(`
+		CREATE OR REPLACE FUNCTION notify_event_on_products_update() RETURNS TRIGGER AS $$
+	
+		DECLARE 
+			data json;
+			notif json;
+
+		BEGIN
+
+			IF (TG_OP = 'DELETE') THEN
+				data = row_to_json(OLD);
+			ELSE
+				data = row_to_json(NEW);
+			END IF;
+
+			notif = json_build_object(
+				'action', TG_OP,
+				'product', data 
+			);		
+
+			PERFORM pg_notify('product_change', notif::text);
+	
+			RETURN NULL;
+		END
+
+		$$ LANGUAGE plpgsql;
+
+		DROP TRIGGER IF EXISTS products_change_trigger ON products;
+
+		CREATE TRIGGER products_change_trigger AFTER INSERT OR UPDATE OR DELETE ON products
+		FOR EACH ROW EXECUTE PROCEDURE notify_event_on_products_update();
+
+		`); err != nil {
+		return err
+	}
+
 	initProducts()
 	return nil
 }

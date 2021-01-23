@@ -44,7 +44,7 @@ func productHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(jsonStr))
+			_, _ = w.Write(jsonStr)
 
 			return http.StatusOK
 
@@ -86,7 +86,7 @@ func productsHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		} else {
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(jsonStr))
+			_, _ = w.Write(jsonStr)
 		}
 	case http.MethodPost:
 		body, err := ioutil.ReadAll(
