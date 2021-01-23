@@ -1,12 +1,11 @@
 package main
 
 import (
+	"alexandrugris.ro/webservicelearning/database"
+	"alexandrugris.ro/webservicelearning/product"
 	"log"
 	"net/http"
 	"os"
-
-	"alexandrugris.ro/webservicelearning/database"
-	"alexandrugris.ro/webservicelearning/product"
 
 	// import the postgres database driver
 	_ "github.com/lib/pq"
@@ -54,6 +53,12 @@ func main() {
 	for k, v := range product.GetHTTPHandlers() {
 		http.Handle(k, corsMiddleware(v))
 	}
+
+	go func() {
+		if err := database.ListenForNotifications("product_change", product.HandleChangeProductNotification); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)
