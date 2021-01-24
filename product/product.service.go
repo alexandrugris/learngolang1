@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"golang.org/x/net/websocket"
 	"io"
 	"io/ioutil"
 	"log"
@@ -125,11 +126,12 @@ func productsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetHTTPHandlers returns the handlers and the associated routes
-func GetHTTPHandlers() map[string]http.HandlerFunc {
+func GetHTTPHandlers() map[string]http.Handler {
 
-	return map[string]http.HandlerFunc{
-		"/products":  productsHandler,
-		"/products/": productHandler,
+	return map[string]http.Handler{
+		"/products":  http.HandlerFunc(productsHandler),
+		"/products/": http.HandlerFunc(productHandler),
+		"/websocket": websocket.Handler(productChangeWSHandler),
 	}
 
 }
