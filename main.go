@@ -60,7 +60,7 @@ func main() {
 		}
 	}()
 
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	if err := http.ListenAndServeTLS(":8080", "./certs/cert.pem", "./certs/key.pem", nil); err != nil {
 		log.Fatal(err)
 	}
 

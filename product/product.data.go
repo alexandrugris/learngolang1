@@ -57,7 +57,7 @@ func (m *mapInternal) GetAll() []*Product {
 	for results.Next() {
 		v := Product{}
 
-		results.Scan(
+		_ = results.Scan(
 			&v.ProductID,
 			&v.Manufacturer,
 			&v.PricePerUnit,
@@ -132,7 +132,7 @@ func (m *mapInternal) UpdateByID(id int, p *Product) bool {
 		p.PricePerUnit,
 		p.UnitsAvailable,
 		p.ProductName,
-		p.ProductID)
+		id)
 
 	if err != nil {
 		log.Println(err)
@@ -196,7 +196,7 @@ func initProducts() {
 func InitStorage() error {
 
 	if database.DbConn == nil {
-		return errors.New("Database not opened")
+		return errors.New("database not opened")
 	}
 
 	t := reflect.TypeOf(Product{})
@@ -231,7 +231,7 @@ func InitStorage() error {
 		return err
 	}
 
-	database.DbConn.Exec("ALTER TABLE Products ADD PRIMARY KEY (ProductID)")
+	_, _ = database.DbConn.Exec("ALTER TABLE Products ADD PRIMARY KEY (ProductID)")
 
 	if _, err := database.DbConn.Exec(
 		"CREATE SEQUENCE IF NOT EXISTS pk_product CACHE 100 OWNED BY Products.ProductID"); err != nil {
